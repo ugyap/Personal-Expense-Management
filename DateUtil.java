@@ -10,7 +10,7 @@ import java.util.Date;
  * @author Eugene
  */
 public class DateUtil {
-    //not creating object by using static
+    //This class is to convert Date to desire format
     public static Date stringToDate(String date) {
         try {
             SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy");
@@ -25,4 +25,15 @@ public class DateUtil {
         SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy");
         return df.format(date);
     }
+    
+    public static String getYearMonth(Date date){
+        SimpleDateFormat ym = new SimpleDateFormat("yyyy, MMM");
+        return ym.format(date);
+    }
+    
+    public static Integer getYear(Date date){
+        SimpleDateFormat year = new SimpleDateFormat("yyyy");
+        return new Integer(year.format(date));
+    }
+
 }

@@ -5,11 +5,13 @@
  */
 package pem.com;
 
+import java.io.Serializable;
+
 /**
  *
  * @author Eugene
  */
-public class Category {
+public class Category implements Serializable{
     private Long categoryId = System.currentTimeMillis(); //generate unique id
     private String name;
     

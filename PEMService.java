@@ -5,25 +5,36 @@
  */
 package pem.com;
 
-import java.io.IOException;
+import java.io.*;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
  * @author Eugene
  */
 public class PEMService {
-    Repository repo = Repository.getRepository();
-    
+
+    private Repository repo = Repository.getRepository();
+
     private Scanner in = new Scanner(System.in); //input from keyboard 
     private int numChoice;
+
+    ReportService report = new ReportService();
     
-    public void showMenu(){
-        while(true) {
+    public PEMService (){
+        reStoreRepository();
+    }
+
+    public void showMenu() {
+        while (true) {
             printMenu();
-            switch(numChoice) {
+            switch (numChoice) {
                 case 1:
                     //add category
                     addCategory();
@@ -46,7 +57,7 @@ public class PEMService {
                     pressEnterToCont();
                     break;
                 case 6:
-                    yearlyExpense();
+                    annualExpense();
                     pressEnterToCont();
                     break;
                 case 7:
@@ -62,7 +73,7 @@ public class PEMService {
             }
         }
     }
-    
+
     public void printMenu() {
         System.out.println("PEM Menu");
         System.out.println("1. Add Category");
@@ -78,38 +89,38 @@ public class PEMService {
         numChoice = in.nextInt();
         System.out.println("");
     }
-    
-    public void pressEnterToCont(){
-        try{
+
+    public void pressEnterToCont() {
+        try {
             System.out.println("...Press Enter to continue...");
             System.in.read();
-        } catch(IOException ex){
+        } catch (IOException ex) {
             ex.printStackTrace();
         }
     }
-    
-    public void addCategory(){
+
+    public void addCategory() {
         in.nextLine(); // Read the nextline below to output
         System.out.print("Add category name: ");
         String categoryName = in.nextLine();
-        
+
         Category cat = new Category(categoryName);
         repo.categories.add(cat); //add new category to category arrayList
         System.out.println("Category " + categoryName + " is added...");
     }
-    
-    public void categoryList(){
+
+    public void categoryList() {
         //print all categories
         System.out.println("Categories: ");
         List<Category> cList = repo.categories;
-        for(int i = 0; i < cList.size(); i++){
+        for (int i = 0; i < cList.size(); i++) {
             Category cat = cList.get(i);
-            System.out.println((i+1) + ". " + cat.getName() + ", " + cat.getCategoryId());
+            System.out.println((i + 1) + ". " + cat.getName() + ", " + cat.getCategoryId());
         }
 
     }
-    
-    public void enterExpense(){
+
+    public void enterExpense() {
         //select category then enter expense
         System.out.println("Enter expense: ");
         categoryList();
@@ -122,67 +133,134 @@ public class PEMService {
         System.out.print("Enter remark; ");
         in.nextLine();
         String remark = in.nextLine();
-        
+
         //select the created Category object from category arraylist
         Category selectedCat = repo.categories.get(select - 1);
-        
+
         System.out.print("Enter Date (dd/mm/yyyy): ");
         String dateAsString = in.nextLine();
         Date date = DateUtil.stringToDate(dateAsString);
         //input date as string and make it to date using method in DateUtil
         //Date date = new Date();
-        
+
         //adding details into Expense object properties
         Expense exp = new Expense();
         exp.setCategoryId(selectedCat.getCategoryId());
         //assign categoryId from Category object into categoryId in Expense object
         exp.setAmount(amount);
         exp.setRemark(remark);
-        exp.setDate(date);          
-        
+        exp.setDate(date);
+
         //store expense object in repository
         repo.expenses.add(exp);
         System.out.println("System: Expense successfully added!");
-        
+
     }
-    
+
     private void expenseList() {
         System.out.println("Expenses: ");
         List<Expense> eList = repo.expenses;
-        
-        for(int i = 0; i < eList.size(); i++){
+
+        for (int i = 0; i < eList.size(); i++) {
             Expense exp = eList.get(i);
             String categoryName = getCategoryNameById(exp.getCategoryId());
             String dateString = DateUtil.dateToString(exp.getDate());
-            
-            System.out.println((i+1) + ". " + categoryName + ", " + exp.getAmount()
-                    + ", " + exp.getRemark() + ", " + dateString);            
+
+            System.out.println((i + 1) + ". " + categoryName + ", " + exp.getAmount()
+                    + ", " + exp.getRemark() + ", " + dateString);
         }
 
     }
-    
+
     private void monthlyExpense() {
-        System.out.println("Monthly expense...");
+        Map<String, Float> expenseMap = report.getMonthlyExpense();
+        Set<String> keys = expenseMap.keySet();
+        //remember the keys are yearMonth in yyyy,MMM format
+
+        System.out.println("Monthly Expense: ");
+        //looping from 1 key to next key
+        for (String k : keys) {
+            System.out.println(k + ": " + expenseMap.get(k));
+        }
     }
-    
-    private void yearlyExpense() {
-        System.out.println("Yearly expense...");
+
+    private void annualExpense() {
+        Map<Integer, Float> expenseAnnualMap = report.getAnnualExpense();
+        Set<Integer> keys = expenseAnnualMap.keySet();
+        //remember the keys are yearMonth in yyyy format
+
+        System.out.println("Annual Expense: ");
+        //looping from 1 key to next key
+        for (Integer k : keys) {
+            System.out.println(k + ": " + expenseAnnualMap.get(k));
+        }
     }
-    
+
     private void categoriseExpenseList() {
-        System.out.println("Expense List categories...");
+        System.out.println("Categories of expenses: ");
+        //no. 10
     }
-    
+
     private void exit() {
+        //stored data to database before exiting
+        storeRepository();
         System.exit(0);
     }
-    
-    String getCategoryNameById(Long catId){
-        for(Category c : repo.categories){
-            if(c.getCategoryId().equals(catId)){
+
+    String getCategoryNameById(Long catId) {
+        for (Category c : repo.categories) {
+            if (c.getCategoryId().equals(catId)) {
                 return c.getName();
             }
         }
         return null;
+    }
+
+    private void storeRepository() {
+       serialize("expenses.ser", repo.expenses);
+       serialize("categories.ser", repo.categories);
+    }
+    
+    public void serialize(String file, Object obj){
+        try {
+            FileOutputStream fout = new FileOutputStream(file);
+            ObjectOutputStream obOut = new ObjectOutputStream(fout);
+            
+            obOut.writeObject(obj); // store expenses in file
+            
+            obOut.close();
+            fout.close();
+        } catch (FileNotFoundException exF) {
+            exF.printStackTrace();
+        } catch (IOException exIO) {
+            exIO.printStackTrace();
+        }
+    }
+    
+    public Object deserialize(String file){
+        try {
+            FileInputStream fin = new FileInputStream(file);
+            ObjectInputStream obIn = new ObjectInputStream(fin);
+            
+            Object input = obIn.readObject();
+            return input;
+        } catch (Exception ex) {
+            System.out.println("No data yet...");
+            return null;
+        }
+        
+    }
+    
+    private void reStoreRepository() {
+           List<Expense> expenses = (List<Expense>) deserialize("expenses.ser");
+           List<Category> categories = (List<Category>) deserialize("categories.ser");
+           
+           if(expenses != null){
+               repo.expenses = expenses;
+           }
+           
+           if(categories != null){
+               repo.categories = categories;
+           }
     }
 }

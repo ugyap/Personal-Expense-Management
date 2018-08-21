@@ -1,13 +1,14 @@
 
 package pem.com;
 
+import java.io.Serializable;
 import java.util.Date;
 
 /**
  *
  * @author Eugene
  */
-public class Expense {
+public class Expense implements Serializable{
     private Long expenseId = System.currentTimeMillis();
     private Long categoryId; //Foreign key
     private Float amount;
